@@ -26,7 +26,12 @@ try:
     '''
     }
     st.set_page_config(layout="wide", menu_items=menu_items)
-
+    hide_streamlit_style = """
+                <style>
+                footer {visibility: hidden;}
+                </style>
+                """
+    st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
     llm_helper = LLMHelper()
 
     st.markdown("## Conversation data extraction")

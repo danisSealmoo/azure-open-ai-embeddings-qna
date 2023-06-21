@@ -128,6 +128,13 @@ try:
     }
     st.set_page_config(layout="wide", menu_items=menu_items)
 
+    hide_streamlit_style = """
+                <style>
+                footer {visibility: hidden;}
+                </style>
+                """
+    st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+    
     llm_helper = LLMHelper(custom_prompt=st.session_state.custom_prompt, temperature=st.session_state.custom_temperature)
 
     # Get available languages for translation
@@ -145,7 +152,7 @@ try:
 
     col1, col2, col3 = st.columns([1,2,1])
     with col1:
-        st.image(os.path.join('images','microsoft.png'))
+        st.image(os.path.join('images','microsoft.png'),width=150)
 
     col1, col2, col3 = st.columns([2,2,2])
     with col1:

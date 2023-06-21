@@ -21,6 +21,13 @@ if 'source_documents' not in st.session_state:
 
 llm_helper = LLMHelper()
 
+hide_streamlit_style = """
+            <style>
+            footer {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+
 # Chat 
 st.text_input("You: ", placeholder="type your question", key="input", on_change=clear_text_input)
 clear_chat = st.button("Clear chat", key="clear_chat", on_click=clear_chat_data)

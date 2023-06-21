@@ -30,7 +30,12 @@ try:
 	'''
     }
     st.set_page_config(layout="wide", menu_items=menu_items)
-
+    hide_streamlit_style = """
+                <style>
+                footer {visibility: hidden;}
+                </style>
+                """
+    st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
     if not 'data_processed' in st.session_state:
         st.session_state['data_processed'] = None
 
