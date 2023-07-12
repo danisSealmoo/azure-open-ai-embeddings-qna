@@ -1,6 +1,5 @@
 # flake8: noqa
 from langchain.prompts import PromptTemplate
-
 # template = """{summaries}
 # Please reply to the question using only the information present in the text above. 
 # Include references to the sources you used to create the answer if those are relevant ("SOURCES"). 
