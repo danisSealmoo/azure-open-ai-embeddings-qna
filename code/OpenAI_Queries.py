@@ -5,6 +5,7 @@ import streamlit as st
 import os
 import traceback
 from utilities.helper import LLMHelper
+import datetime
 
 import logging
 logger = logging.getLogger('azure.core.pipeline.policies.http_logging_policy').setLevel(logging.WARNING)
@@ -103,6 +104,8 @@ try:
     default_prompt = "" 
     default_question = "" 
     default_answer = ""
+    enterTime = datetime.datetime.now()
+    print("enter: ", enterTime)
 
     if 'question' not in st.session_state:
         st.session_state['question'] = default_question
@@ -135,7 +138,12 @@ try:
                 """
     st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
     
-    llm_helper = LLMHelper(custom_prompt=st.session_state.custom_prompt, temperature=st.session_state.custom_temperature)
+    if "llm" not in st.session_state:
+        llm_helper = LLMHelper(custom_prompt=st.session_state.custom_prompt, temperature=st.session_state.custom_temperature)
+        st.session_state["llm"] = llm_helper
+        print("new llm")
+    
+    llm_helper = st.session_state["llm"]
 
     # Get available languages for translation
     available_languages = get_languages()
@@ -177,11 +185,13 @@ try:
         st.markdown(f'\n\nSources: {sources}') 
         with st.expander("Question and Answer Context"):
             st.markdown(st.session_state['context'].replace('$', '\$'))
-            st.markdown(f"SOURCES: {sources}") 
+            st.markdown(f"SOURCES: {sources}")
+            st.markdown(f"Time Cost: {datetime.datetime.now() - enterTime}s")
 
     if st.session_state['translation_language'] and st.session_state['translation_language'] != '':
         st.write(f"Translation to other languages, 翻译成其他语言, النص باللغة العربية")
         st.write(f"{llm_helper.translator.translate(st.session_state['response'], available_languages[st.session_state['translation_language']])}")		
-		
+	
+    print("end: ", datetime.datetime.now(), ", cost: ", datetime.datetime.now() - enterTime)
 except Exception:
     st.error(traceback.format_exc())

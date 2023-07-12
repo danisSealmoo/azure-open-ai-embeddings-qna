@@ -33,6 +33,7 @@ import pandas as pd
 import urllib
 
 from fake_useragent import UserAgent
+import datetime
 
 class LLMHelper:
     def __init__(self,
@@ -98,8 +99,8 @@ class LLMHelper:
             self.vector_store: VectorStore = AzureSearch(azure_cognitive_search_name=self.vector_store_address, azure_cognitive_search_key=self.vector_store_password, index_name=self.index_name, embedding_function=self.embeddings.embed_query) if vector_store is None else vector_store
         else:
             self.vector_store: RedisExtended = RedisExtended(redis_url=self.vector_store_full_address, index_name=self.index_name, embedding_function=self.embeddings.embed_query) if vector_store is None else vector_store   
-        self.k : int = 3 if k is None else k
-
+        self.k : int = 1 if k is None else k
+        self.k=1
         self.pdf_parser : AzureFormRecognizerClient = AzureFormRecognizerClient() if pdf_parser is None else pdf_parser
         self.blob_client: AzureBlobStorageClient = AzureBlobStorageClient() if blob_client is None else blob_client
         self.enable_translation : bool = False if enable_translation is None else enable_translation
@@ -107,6 +108,15 @@ class LLMHelper:
 
         self.user_agent: UserAgent() = UserAgent()
         self.user_agent.random
+        self.question_generator = LLMChain(llm=self.llm, prompt=CONDENSE_QUESTION_PROMPT, verbose=False)
+        self.doc_chain = load_qa_with_sources_chain(self.llm, chain_type="stuff", verbose=True, prompt=self.prompt)
+        self.chain = ConversationalRetrievalChain(
+            retriever=self.vector_store.as_retriever(),
+            question_generator=self.question_generator,
+            combine_docs_chain=self.doc_chain,
+            return_source_documents=True,
+            # top_k_docs_for_context= self.k
+        )
 
     def add_embeddings_lc(self, source_url):
         try:
@@ -176,20 +186,23 @@ class LLMHelper:
                 }, result)))
 
     def get_semantic_answer_lang_chain(self, question, chat_history):
-        question_generator = LLMChain(llm=self.llm, prompt=CONDENSE_QUESTION_PROMPT, verbose=False)
-        doc_chain = load_qa_with_sources_chain(self.llm, chain_type="stuff", verbose=True, prompt=self.prompt)
-        chain = ConversationalRetrievalChain(
-            retriever=self.vector_store.as_retriever(),
-            question_generator=question_generator,
-            combine_docs_chain=doc_chain,
-            return_source_documents=True,
-            # top_k_docs_for_context= self.k
-        )
-        result = chain({"question": question, "chat_history": chat_history})
+        print("start chain: ", datetime.datetime.now())
+        # question_generator = LLMChain(llm=self.llm, prompt=CONDENSE_QUESTION_PROMPT, verbose=False)
+        # doc_chain = load_qa_with_sources_chain(self.llm, chain_type="stuff", verbose=True, prompt=self.prompt)
+        # chain = ConversationalRetrievalChain(
+        #     retriever=self.vector_store.as_retriever(),
+        #     question_generator=question_generator,
+        #     combine_docs_chain=doc_chain,
+        #     return_source_documents=True,
+        #     # top_k_docs_for_context= self.k
+        # )
+        result = self.chain({"question": question, "chat_history": chat_history})
+        print("after chain: ", datetime.datetime.now())
         context = "\n".join(list(map(lambda x: x.page_content, result['source_documents'])))
         sources = "\n".join(set(map(lambda x: x.metadata["source"], result['source_documents'])))
 
         container_sas = self.blob_client.get_container_sas()
+        print("after container_sas: ", datetime.datetime.now())
         
         result['answer'] = result['answer'].split('SOURCES:')[0].split('Sources:')[0].split('SOURCE:')[0].split('Source:')[0]
         sources = sources.replace('_SAS_TOKEN_PLACEHOLDER_', container_sas)
